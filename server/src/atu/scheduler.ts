@@ -9,6 +9,7 @@ import { normalizeBatch, normalize } from '../gps/normalizer';
 import { buildAtuPayload, AtuPayload } from './mapper';
 import { validatePayload, isOlderThanTenMinutes } from './validator';
 import { AtuWsClient } from './ws-client';
+import { handleResponse } from './response-handler';
 import { TransmissionService } from '../transmissions/transmission-service';
 import { AlertManager, consoleAlert } from '../alerts/alert-manager';
 import { GpsPosition } from '../gps/dto/gps-position.dto';
@@ -373,12 +374,18 @@ export class TransmissionScheduler {
         const atuResponse = await wsClient.send(payload);
         markSent(imei, position);
 
-        console.log(`[Scheduler] ✅ Sent position for ${imei}, identifier=${payload.identifier}, atu_code=${atuResponse.codigo}`);
+        const action = handleResponse(atuResponse);
+        console.log(`[Scheduler] ✅ Sent position for ${imei}, identifier=${payload.identifier}, atu_code=${atuResponse.codigo}, msg=${action.message}`);
 
-        // Update with actual ATU response
+        // Update with actual ATU response + generated message
         if (dbId !== undefined) {
           const latency = Date.now() - startTime;
-          await transmissionService.updateTransmissionStatus(dbId, 'accepted_by_atu', atuResponse, latency);
+          await transmissionService.updateTransmissionStatus(
+            dbId,
+            action.status,
+            { codigo: atuResponse.codigo, descrip: action.message },
+            latency
+          );
         }
 
         // Record success for 20-second rule
