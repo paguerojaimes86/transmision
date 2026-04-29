@@ -31,6 +31,7 @@ import { createTransmissionRoutes } from './api/transmissions.routes';
 import { createReportsRoutes } from './api/reports.routes';
 import { createGpsRoutes } from './api/gps.routes';
 import { createAuthRoutes } from './api/auth.routes';
+import { createDebugRoutes } from './api/debug.routes';
 import { authMiddleware } from './middleware/auth';
 
 /**
@@ -203,6 +204,9 @@ async function main(): Promise<void> {
   // Register GPS routes
   app.use('/gps', createGpsRoutes({ gpsAdapter }));
 
+  // Register debug routes
+  app.use('/debug', createDebugRoutes(pool));
+
   // Root endpoint
   app.get('/', (_req: Request, res: Response) => {
     res.json({
@@ -217,6 +221,7 @@ async function main(): Promise<void> {
         transmissions: '/atu/transmissions',
         reports: '/reports',
         gps: '/gps',
+        debug: '/debug',
       },
     });
   });

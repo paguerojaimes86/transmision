@@ -19,6 +19,13 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [payloadSample, setPayloadSample] = useState<{
+    jsonString: string;
+    totalVehicles: number;
+    validation: { valid: boolean; errors: Array<{ field: string; message: string }> };
+  } | null>(null);
+  const [payloadLoading, setPayloadLoading] = useState(false);
+  const [showPayload, setShowPayload] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -51,6 +58,41 @@ function Dashboard() {
       setError(err instanceof Error ? err.message : 'No se pudieron cargar los datos del panel');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPayloadSample = async () => {
+    try {
+      setPayloadLoading(true);
+      const sample = await api.getPayloadSample();
+      setPayloadSample({
+        jsonString: sample.jsonString,
+        totalVehicles: sample.totalVehicles,
+        validation: sample.validation,
+      });
+      setShowPayload(true);
+    } catch (err) {
+      console.error('Error cargando payload sample:', err);
+    } finally {
+      setPayloadLoading(false);
+    }
+  };
+
+  const downloadAllPayloads = async () => {
+    try {
+      const data = await api.getPayloadsAll();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `atu-payloads-${new Date().toISOString().slice(0, 19)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error descargando payloads:', err);
+      alert('Error al descargar payloads');
     }
   };
 
@@ -200,6 +242,76 @@ function Dashboard() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* JSON Payload Inspector */}
+      <div className="panel mb-6">
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="panel-title">📦 JSON Payload enviado a ATU</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={fetchPayloadSample}
+              disabled={payloadLoading}
+              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            >
+              {payloadLoading ? 'Cargando...' : showPayload ? 'Refrescar' : 'Ver JSON'}
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={downloadAllPayloads}
+              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            >
+              ⬇ Descargar todos
+            </button>
+          </div>
+        </div>
+        <div className="panel-body">
+          {!showPayload && (
+            <div className="empty-state" style={{ padding: '16px' }}>
+              <p className="empty-state-text">
+                Hacé clic en <strong>"Ver JSON"</strong> para ver el payload que se envía a ATU, o en <strong>"Descargar todos"</strong> para bajar un JSON con todos los vehículos.
+              </p>
+            </div>
+          )}
+          {showPayload && payloadSample && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {payloadSample.totalVehicles} vehículos activos
+                </span>
+                <span className={`status-pill ${payloadSample.validation.valid ? 'accepted' : 'rejected'}`}>
+                  {payloadSample.validation.valid ? '✓ Válido' : '✗ Con errores'}
+                </span>
+              </div>
+              {!payloadSample.validation.valid && payloadSample.validation.errors.length > 0 && (
+                <div style={{ marginBottom: '12px', padding: '8px', background: 'rgba(239,68,68,0.1)', borderRadius: '4px' }}>
+                  <strong style={{ color: 'var(--accent-red)', fontSize: '0.8rem' }}>Errores de validación:</strong>
+                  <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '0.75rem', color: 'var(--accent-red)' }}>
+                    {payloadSample.validation.errors.map((e, i) => (
+                      <li key={i}>{e.field}: {e.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <pre
+                style={{
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  padding: '12px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'Monaco, Menlo, monospace',
+                  overflow: 'auto',
+                  maxHeight: '400px',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                {payloadSample.jsonString}
+              </pre>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Vehicles Without Update */}

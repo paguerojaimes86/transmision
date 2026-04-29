@@ -212,6 +212,31 @@ export const api = {
 
   // GET /reports/summary
   getSummary: () => get<ReportSummary>('/reports/summary'),
+
+  // GET /debug/payload-sample
+  getPayloadSample: () => get<{
+    source: string;
+    rawRow: Record<string, unknown>;
+    normalizedPosition: Record<string, unknown>;
+    atuPayload: Record<string, unknown>;
+    validation: { valid: boolean; errors: Array<{ field: string; message: string }> };
+    jsonString: string;
+    totalVehicles: number;
+  }>('/debug/payload-sample'),
+
+  // GET /debug/payloads-all
+  getPayloadsAll: () => get<{
+    total: number;
+    valid: number;
+    invalid: number;
+    payloads: Array<{
+      imei: string;
+      plate: string;
+      payload: Record<string, unknown>;
+      valid: boolean;
+      errors: Array<{ field: string; message: string }>;
+    }>;
+  }>('/debug/payloads-all'),
 };
 
 export type {

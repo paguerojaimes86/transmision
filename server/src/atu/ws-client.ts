@@ -156,6 +156,7 @@ export class AtuWsClient {
       try {
         const jsonPayload = JSON.stringify(payload);
         console.log(`[ATU WS] Sending payload: identifier=${payload.identifier}`);
+        console.log(`[ATU WS] JSON payload: ${jsonPayload}`);
         this.ws!.send(jsonPayload);
       } catch (error) {
         clearTimeout(timeout);
