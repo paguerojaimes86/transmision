@@ -56,6 +56,12 @@ export class TransmissionService {
       console.log(`[TransmissionService] Received ATU response: code=${response.codigo}, identifier=${response.identifier}`);
 
       try {
+        // Defensive: ATU may not return identifier in some edge cases
+        if (!response.identifier) {
+          console.warn(`[TransmissionService] ATU response missing identifier. Code: ${response.codigo}. Skipping DB update.`);
+          return;
+        }
+
         // Find the transmission by identifier
         const transmission = await repository.getByIdentifier(response.identifier);
         if (!transmission) {

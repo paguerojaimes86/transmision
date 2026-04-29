@@ -77,7 +77,15 @@ export class AtuWsClient {
 
         this.ws.on('message', (data: WebSocket.Data) => {
           try {
-            const response = JSON.parse(data.toString()) as AtuResponse;
+            const raw = JSON.parse(data.toString());
+            // ATU returns fields with capitalized first letter: Codigo, Identifier, Timestamp
+            // Normalize to lowercase for internal consistency
+            const response: AtuResponse = {
+              codigo: raw.codigo ?? raw.Codigo,
+              identifier: raw.identifier ?? raw.Identifier,
+              timestamp: raw.timestamp ?? raw.Timestamp,
+              descrip: raw.descrip ?? raw.Descrip,
+            };
             console.log(`[ATU WS] Received response: codigo=${response.codigo}, identifier=${response.identifier}`);
 
             // Check if it's a token invalid response

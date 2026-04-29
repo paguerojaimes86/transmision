@@ -7,11 +7,14 @@ import { TransmissionStatus } from './ws-client';
 
 /**
  * ATU Response shape from the WebSocket server
+ * NOTE: ATU returns fields with capitalized first letter:
+ *   Codigo, Identifier, Timestamp
+ * We normalize to lowercase for internal use.
  */
 export interface AtuResponse {
   codigo: string;      // '00', '01', '03', '05'...'14', '16', '17'
-  identifier: string;
-  timestamp: string;  // ISO 8601 string
+  identifier?: string; // ATU returns "Identifier" with capital I
+  timestamp?: string;  // ATU returns "Timestamp" with capital T
   descrip?: string;   // description (ATU may include this)
 }
 
