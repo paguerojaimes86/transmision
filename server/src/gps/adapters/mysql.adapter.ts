@@ -44,7 +44,7 @@ SELECT
     tlp.latitude AS latitude,
     tlp.longitude AS longitude,
     '${ATU_ROUTE_CODE}' AS route_id,
-    TIMESTAMPDIFF(MICROSECOND, '1970-01-01 00:00:00.000000', CONVERT_TZ(tlp.devicetime, '-05:00', '+00:00')) DIV 1000 AS ts,
+    TIMESTAMPDIFF(MICROSECOND, '1970-01-01 00:00:00.000000', CONVERT_TZ(tlp.servertime, '-05:00', '+00:00')) DIV 1000 AS ts,
     vh.placa AS license_plate,
     tlp.speed AS speed,
     IF(vh.ac_sentido = 'A', 0, 1) AS direction_id,
