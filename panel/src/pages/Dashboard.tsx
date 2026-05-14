@@ -91,8 +91,9 @@ function Dashboard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error desconocido';
       console.error('Error descargando payloads:', err);
-      alert('Error al descargar payloads');
+      alert(`Error al descargar payloads: ${message}`);
     }
   };
 

@@ -72,6 +72,19 @@ function Transmissions() {
     });
   };
 
+  const formatUnixMs = (ms: number | null | undefined): string => {
+    if (ms === null || ms === undefined) return '—';
+    const date = new Date(ms);
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
   const getStatusClass = (status: string): string => {
     if (status === 'accepted_by_atu') return 'accepted';
     if (status === 'rejected_by_atu') return 'rejected';
@@ -329,7 +342,7 @@ function Transmissions() {
                   </span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Latency</span>
+                  <span className="detail-label">Latencia</span>
                   <span className="detail-value">
                     {selectedRecord.latency_ms !== null ? `${selectedRecord.latency_ms}ms` : '—'}
                   </span>
@@ -338,6 +351,54 @@ function Transmissions() {
                   <span className="detail-label">Identifier</span>
                   <span className="detail-value" style={{ fontFamily: 'monospace' }}>
                     {selectedRecord.identifier || '—'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Driver ID</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.driver_id || '—'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Dirección</span>
+                  <span className="detail-value">
+                    {selectedRecord.direction_id === 0 ? 'IDA' : 'VUELTA'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Latitud</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.latitude ?? '—'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Longitud</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.longitude ?? '—'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Velocidad (km/h)</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.speed ?? '—'}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Timestamp GPS (ts)</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.ts ?? '—'}
+                  </span>
+                  <span className="detail-value" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {selectedRecord.ts ? formatUnixMs(selectedRecord.ts) : ''}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Trip Start (tsinitialtrip)</span>
+                  <span className="detail-value" style={{ fontFamily: 'monospace' }}>
+                    {selectedRecord.tsinitialtrip ?? '—'}
+                  </span>
+                  <span className="detail-value" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {selectedRecord.tsinitialtrip ? formatUnixMs(selectedRecord.tsinitialtrip) : ''}
                   </span>
                 </div>
                 <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
@@ -349,22 +410,29 @@ function Transmissions() {
               </div>
 
               {/* Payload JSON */}
-              {selectedRecord.payload && (
-                <div style={{ marginTop: '16px' }}>
-                  <h4 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>
-                    Full Payload:
-                  </h4>
-                  <div className="payload-viewer">
-                    {(() => {
-                      try {
-                        return JSON.stringify(JSON.parse(selectedRecord.payload!), null, 2);
-                      } catch {
-                        return selectedRecord.payload;
-                      }
-                    })()}
+              {(() => {
+                const rawPayload = selectedRecord.payload_json || selectedRecord.payload;
+                if (!rawPayload) return null;
+
+                let formattedPayload: string;
+                try {
+                  const parsed = JSON.parse(rawPayload);
+                  formattedPayload = JSON.stringify(parsed, null, 2);
+                } catch {
+                  formattedPayload = rawPayload;
+                }
+
+                return (
+                  <div style={{ marginTop: '16px' }}>
+                    <h4 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>
+                      JSON enviado a ATU:
+                    </h4>
+                    <div className="payload-viewer">
+                      {formattedPayload}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setSelectedRecord(null)}>

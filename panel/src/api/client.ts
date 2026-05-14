@@ -26,6 +26,13 @@ interface TransmissionRecord {
   license_plate: string;
   imei: string;
   route_id: string;
+  driver_id?: string;
+  direction_id?: number;
+  latitude?: number;
+  longitude?: number;
+  speed?: number;
+  ts?: number;
+  tsinitialtrip?: number;
   status: string;
   atu_response_code: string | null;
   atu_response_message: string | null;
@@ -33,6 +40,7 @@ interface TransmissionRecord {
   created_at: string;
   identifier: string | null;
   payload?: string;
+  payload_json?: string;
 }
 
 interface PaginatedResponse<T> {
@@ -106,9 +114,15 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 async function get<T>(path: string): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { ...getAuthHeaders() },
+    signal: controller.signal,
   });
+  clearTimeout(timeoutId);
+
   if (!response.ok) {
     throw new Error(`API error ${response.status}: ${response.statusText}`);
   }

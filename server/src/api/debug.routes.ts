@@ -19,7 +19,11 @@ export function createDebugRoutes(pool: Pool): Router {
    * WITHOUT sending it to ATU. Useful for inspecting the JSON structure.
    */
   router.get('/payload-sample', async (_req: Request, res: Response) => {
+    let connection: any;
     try {
+      connection = await pool.getConnection();
+      await connection.query('SET SESSION lock_wait_timeout=5');
+
       const adapter = new MySqlGpsAdapter(pool);
       const rawRows = await adapter.getLatestPositions();
 
@@ -47,7 +51,10 @@ export function createDebugRoutes(pool: Pool): Router {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[Debug] payload-sample error:', message);
       res.status(500).json({ error: `Failed to build sample payload: ${message}` });
+    } finally {
+      if (connection) connection.release();
     }
   });
 
@@ -57,7 +64,11 @@ export function createDebugRoutes(pool: Pool): Router {
    * WITHOUT sending them to ATU.
    */
   router.get('/payloads-all', async (_req: Request, res: Response) => {
+    let connection: any;
     try {
+      connection = await pool.getConnection();
+      await connection.query('SET SESSION lock_wait_timeout=5');
+
       const adapter = new MySqlGpsAdapter(pool);
       const rawRows = await adapter.getLatestPositions();
 
@@ -92,7 +103,10 @@ export function createDebugRoutes(pool: Pool): Router {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[Debug] payloads-all error:', message);
       res.status(500).json({ error: `Failed to build payloads: ${message}` });
+    } finally {
+      if (connection) connection.release();
     }
   });
 

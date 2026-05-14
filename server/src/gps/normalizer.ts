@@ -54,10 +54,10 @@ export function normalize(raw: GpsRawRow): GpsPosition {
   }
 
   const gpsTimestamp = Number(raw.ts);
-  const rawTripStartTimestamp = Number(raw.tsinitialtrip);
-  const tripStartTimestamp = rawTripStartTimestamp > gpsTimestamp
-    ? gpsTimestamp
-    : rawTripStartTimestamp;
+  const tripStartTimestamp = Number(raw.tsinitialtrip);
+  // NOTA: tsinitialtrip debe ser CONSTANTE durante todo el viaje.
+  // NO se debe reemplazar con gpsTimestamp — eso haría que cambie cada 5s.
+  // Si tsinitialtrip > ts, el validator lo rechaza como validation_failed.
 
   return {
     deviceImei: String(raw.imei).trim(),
