@@ -108,6 +108,68 @@ export function createTransmissionRoutes(repository: TransmissionRepository): Ro
   });
 
   /**
+   * GET /atu/transmissions/live — Ultimas transmisiones con payload para panel en tiempo real
+   */
+  router.get('/live', async (req: Request, res: Response) => {
+    try {
+      const query = req.query as { limit?: string };
+      const limit = parseInt(query.limit ?? '30', 10);
+
+      const records = await repository.getRecent(limit);
+
+      const liveData = records
+        .filter((r) => r.payload_json)
+        .map((r) => {
+          let payload: any = null;
+          try {
+            payload = JSON.parse(r.payload_json);
+          } catch {
+            payload = r.payload_json;
+          }
+
+          const toHuman = (ms: number) => {
+            const d = new Date(ms);
+            return d.toLocaleString('es-PE', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
+              timeZone: 'America/Lima',
+            });
+          };
+
+          return {
+            id: r.id,
+            imei: r.imei,
+            placa: r.license_plate,
+            ruta: r.route_id,
+            direccion: r.direction_id === 0 ? 'IDA' : 'VUELTA',
+            conductor: r.driver_id,
+            velocidad: r.speed,
+            latitud: r.latitude,
+            longitud: r.longitude,
+            ts: r.ts,
+            ts_humano: r.ts ? toHuman(r.ts) : null,
+            tsinitialtrip: r.tsinitialtrip,
+            tsinitialtrip_humano: r.tsinitialtrip ? toHuman(r.tsinitialtrip) : null,
+            codigo_atu: r.atu_response_code,
+            latencia_ms: r.latency_ms,
+            identifier: r.identifier,
+            created_at: r.created_at,
+            payload_json: payload,
+          };
+        });
+
+      res.json({
+        records: liveData,
+        count: liveData.length,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: `Failed to get live transmissions: ${message}` });
+    }
+  });
+
+  /**
    * GET /atu/transmissions/vehicles — List of distinct vehicles with transmissions
    */
   router.get('/vehicles', async (_req: Request, res: Response) => {

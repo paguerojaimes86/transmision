@@ -253,6 +253,32 @@ export const api = {
     }>;
   }>('/debug/payloads-all'),
 
+  // GET /atu/transmissions/live?limit=30
+  getLivePayloads: (limit = 30) => get<{
+    records: Array<{
+      id: number;
+      imei: string;
+      placa: string;
+      ruta: string;
+      direccion: string;
+      conductor: string;
+      velocidad: number;
+      latitud: number;
+      longitud: number;
+      ts: number;
+      ts_humano: string | null;
+      tsinitialtrip: number;
+      tsinitialtrip_humano: string | null;
+      codigo_atu: string | null;
+      latencia_ms: number | null;
+      identifier: string;
+      created_at: string;
+      payload_json: Record<string, unknown> | null;
+    }>;
+    count: number;
+    generatedAt: string;
+  }>(`/atu/transmissions/live?limit=${limit}`),
+
   // GET /atu/transmissions/vehicles
   getVehicles: () => get<{
     vehicles: Array<{ imei: string; plate: string }>;

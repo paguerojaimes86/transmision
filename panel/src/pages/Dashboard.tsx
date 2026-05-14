@@ -26,6 +26,30 @@ function Dashboard() {
   } | null>(null);
   const [payloadLoading, setPayloadLoading] = useState(false);
   const [showPayload, setShowPayload] = useState(false);
+  const [livePayloads, setLivePayloads] = useState<Array<{
+    id: number;
+    imei: string;
+    placa: string;
+    ts: number;
+    ts_humano: string | null;
+    tsinitialtrip: number;
+    tsinitialtrip_humano: string | null;
+    direccion: string;
+    velocidad: number;
+    codigo_atu: string | null;
+    identifier: string;
+    payload_json: Record<string, unknown> | null;
+  }>>([]);
+  const [selectedLivePayload, setSelectedLivePayload] = useState<Record<string, unknown> | null>(null);
+
+  const fetchLivePayloads = async () => {
+    try {
+      const result = await api.getLivePayloads(20);
+      setLivePayloads(result.records);
+    } catch {
+      // Silencioso
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -99,7 +123,11 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 5000);
+    fetchLivePayloads();
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      fetchLivePayloads();
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -436,6 +464,101 @@ function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Live Payloads Panel */}
+        <div className="panel mb-6">
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="panel-title">🔴 EN VIVO — JSONs enviados a ATU</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {livePayloads.length} payloads • refresca cada 5s
+            </span>
+          </div>
+          <div className="panel-body" style={{ maxHeight: '500px', overflow: 'auto' }}>
+            {livePayloads.length === 0 ? (
+              <div className="empty-state" style={{ padding: '16px' }}>
+                <p className="empty-state-text">Esperando transmisiones...</p>
+              </div>
+            ) : (
+              <table className="data-table" style={{ fontSize: '0.7rem' }}>
+                <thead>
+                  <tr>
+                    <th>Placa</th>
+                    <th>Dir</th>
+                    <th>Vel</th>
+                    <th>GPS Timestamp (ts)</th>
+                    <th>Trip Start (tsinitialtrip)</th>
+                    <th>ATU</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {livePayloads.map((p) => (
+                    <tr key={p.id} style={{ cursor: 'pointer' }}
+                      onClick={() => setSelectedLivePayload(p.payload_json)}>
+                      <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{p.placa}</td>
+                      <td>{p.direccion}</td>
+                      <td>{p.velocidad}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.65rem' }}>
+                        <div>{p.ts}</div>
+                        <div style={{ color: 'var(--text-muted)' }}>{p.ts_humano}</div>
+                      </td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.65rem' }}>
+                        <div>{p.tsinitialtrip}</div>
+                        <div style={{ color: p.tsinitialtrip_humano ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                          {p.tsinitialtrip_humano || '—'}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-pill ${p.codigo_atu === '00' ? 'accepted' : 'rejected'}`}
+                          style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                          {p.codigo_atu || '—'}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-secondary" style={{ fontSize: '0.6rem', padding: '2px 6px' }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedLivePayload(p.payload_json); }}>
+                          JSON
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Live Payload JSON Modal */}
+        {selectedLivePayload && (
+          <div className="modal-overlay" onClick={() => setSelectedLivePayload(null)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+              <div className="modal-header">
+                <h3 className="modal-title">📦 JSON enviado a ATU</h3>
+                <button className="modal-close" onClick={() => setSelectedLivePayload(null)}>×</button>
+              </div>
+              <div className="modal-body">
+                <pre style={{
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  padding: '12px',
+                  fontSize: '0.7rem',
+                  fontFamily: 'Monaco, Menlo, monospace',
+                  overflow: 'auto',
+                  maxHeight: '60vh',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}>
+                  {JSON.stringify(selectedLivePayload, null, 2)}
+                </pre>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setSelectedLivePayload(null)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
